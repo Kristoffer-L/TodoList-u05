@@ -2,24 +2,43 @@ import supabase from "./supabase";
 
 async function getInfo(supabase: any) {
   let { data: todo, error } = await supabase.from("todo").select("*");
-  console.log(supabase);
   if (error) {
     console.error("Fel vid hämtning:", error.message);
   } else {
     console.log("todo:", todo);
-    todo.forEach((item) => {
-      count++;
-      item.id = count;
+    todo.forEach((item: Todo) => {
+      createTodo(item);
+      console.log(item.id);
+    });
+  }
+}
+
+async function giveInfo(todo: Todo) {
+  let { data: response, error } = await supabase
+    .from("todo")
+    .insert([{ description: todo.description, status: todo.status }])
+    .select();
+  if (error) {
+    console.error("Fel vid hämtning:", error.message);
+  } else {
+    response.forEach((item: Todo) => {
       createTodo(item);
     });
   }
 }
 
-async function giveInfo(todoItem) {
-  const response = await supabase
-    .from("todo")
-    .insert([{ id: todoItem.id, description: todoItem.description, status: todoItem.status }])
-    .select();
+async function deleteInfo(todo: Todo) {
+  const response = await supabase.from("todo").delete().eq("id", todo.id);
+  console.log("response", response);
+}
+
+async function deleteAllInfo() {
+  const response = await supabase.from("todo").delete().neq("id", 0);
+  console.log("response", response);
+}
+
+async function updateInfo(todo: Todo) {
+  const response = await supabase.from("todo").update({ description: todo.description }).eq("id", todo.id).select();
   console.log("response", response);
 }
 
@@ -29,29 +48,22 @@ const todoSection = document.querySelector(".todo-section") as HTMLElement;
 const input = document.querySelector(".desc-input") as HTMLInputElement;
 const saveBtn = document.querySelector(".btn-save") as HTMLButtonElement;
 const clearBtn = document.querySelector(".btn-clear") as HTMLButtonElement;
-let count = 0;
-let localStorageInfo: Array<Todo> = [];
 
 interface Todo {
-  id: number;
+  id?: number;
   description: string;
   status: boolean;
 }
 
 saveBtn.addEventListener("click", () => {
   const todo: Todo = {
-    id: count,
     description: input.value,
     status: true,
   };
-  count++;
   giveInfo(todo);
-  createTodo(todo);
 });
 
 function createTodo(todo: Todo) {
-  localStorageInfo.push(todo);
-  localStorage.setItem("localStorageInfo", JSON.stringify(localStorageInfo));
   const divs = document.createElement("div");
   todoSection.appendChild(divs);
   divs.classList.add("todo-element");
@@ -83,7 +95,7 @@ function createTodo(todo: Todo) {
     editSave.addEventListener("click", () => {
       description.textContent = editInput.value;
       todo.description = editInput.value;
-      localStorage.setItem("localStorageInfo", JSON.stringify(localStorageInfo));
+      updateInfo(todo);
       remove.style.display = "block";
       edit.style.display = "block";
       editInput.remove();
@@ -97,10 +109,11 @@ function createTodo(todo: Todo) {
   remove.classList.add("remove");
   remove.addEventListener("click", () => {
     divs.remove();
+    deleteInfo(todo);
   });
 }
 
 clearBtn.addEventListener("click", () => {
   todoSection.innerHTML = "";
-  localStorage.clear();
+  deleteAllInfo();
 });
