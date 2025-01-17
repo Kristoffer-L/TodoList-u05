@@ -7,7 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-src/supabase.ts
+supabase.ts
 
 node_modules
 dist
